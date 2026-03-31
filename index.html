@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sultan's Resume Run</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f0f1a;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+    overflow: hidden;
+    touch-action: none;
+  }
+  #game-wrapper {
+    position: relative;
+    width: min(480px, 100vw);
+    max-width: 480px;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(99,179,255,0.3);
+  }
+  #ui-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border-radius: 12px;
+    background: rgba(10,10,26,0.88);
+    backdrop-filter: blur(4px);
+    padding: 24px;
+    text-align: center;
+  }
+  #ui-overlay.hidden { display: none; }
+  #ui-overlay h1 {
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    background: linear-gradient(135deg, #63b3ff, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  #ui-overlay p {
+    color: #a0aec0; font-size: 0.9rem; line-height: 1.6;
+    max-width: 340px; margin-bottom: 20px;
+  }
+  .pill {
+    display: inline-block;
+    background: rgba(99,179,255,0.15);
+    border: 1px solid rgba(99,179,255,0.4);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    color: #63b3ff;
+    margin: 3px;
+  }
+  .pills { margin-bottom: 20px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px; border-radius: 999px;
+    font-size: 1rem; font-weight: 600;
+    border: none; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-decoration: none;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary {
+    background: linear-gradient(135deg, #63b3ff, #a78bfa);
+    color: #0f0f1a;
+    box-shadow: 0 4px 20px rgba(99,179,255,0.4);
+  }
+  .btn-secondary {
+    background: rgba(167,139,250,0.15);
+    border: 1px solid rgba(167,139,250,0.5);
+    color: #a78bfa;
+  }
+  .btn-ghost {
+    background: rgba(99,179,255,0.1);
+    border: 1px solid rgba(99,179,255,0.3);
+    color: #63b3ff;
+  }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 12px; }
+  #score-hud {
+    position: absolute; top: 12px; right: 16px;
+    font-size: 0.85rem; color: #a0aec0;
+    pointer-events: none;
+  }
+  #project-toast {
+    position: absolute; bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15,15,26,0.95);
+    border: 1px solid rgba(99,179,255,0.4);
+    border-radius: 10px;
+    padding: 10px 18px;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    width: 90%;
+    max-width: 420px;
+  }
+  #project-toast.show { opacity: 1; }
+  #project-toast .toast-title {
+    font-size: 0.85rem; font-weight: 700;
+    color: #63b3ff;
+  }
+  #project-toast .toast-desc {
+    font-size: 0.75rem; color: #a0aec0; margin-top: 2px;
+  }
+  #tap-hint {
+    position: absolute; bottom: 80px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.78rem; color: rgba(160,174,192,0.6);
+    pointer-events: none;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div id="game-wrapper">
+  <canvas id="c" width="480" height="280"></canvas>
+  <div id="score-hud">⭐ <span id="score-val">0</span></div>
+  <div id="tap-hint">TAP / SPACE to jump</div>
+
+  <!-- Splash Screen -->
+  <div id="ui-overlay" data-screen="splash">
+    <h1>Sultan's Resume Run 🏃</h1>
+    <p>Jump over 4 projects from my career. Each obstacle you clear reveals a real achievement!</p>
+    <div class="pills">
+      <span class="pill">🏦 Citi Analytics</span>
+      <span class="pill">🏨 Hotel Ops</span>
+      <span class="pill">📡 Telecom</span>
+      <span class="pill">₿ Crypto</span>
+    </div>
+    <button class="btn btn-primary" onclick="startGame()">▶ Start Running</button>
+  </div>
+
+  <!-- Project Card Screen -->
+  <div id="ui-overlay" data-screen="project" class="hidden" id="proj-screen">
+    <div id="proj-icon" style="font-size:2.5rem;margin-bottom:8px"></div>
+    <h1 id="proj-title"></h1>
+    <p id="proj-body"></p>
+    <div class="pills" id="proj-tags"></div>
+    <button class="btn btn-primary" onclick="resumeGame()">Keep Running →</button>
+  </div>
+
+  <!-- End Screen -->
+  <div id="ui-overlay" data-screen="end" class="hidden" id="end-screen">
+    <div style="font-size:2.5rem;margin-bottom:8px">🎉</div>
+    <h1>You cleared all 4 projects!</h1>
+    <p>That's Sultan Siddiqui — Senior Business Analyst with 4+ years across banking, hospitality, telecom & fintech. Let's connect.</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="https://drive.google.com/file/d/YOUR_RESUME_ID/view" target="_blank">📄 Download Resume</a>
+      <a class="btn btn-secondary" href="https://calendly.com/sultansiddiqui123" target="_blank">📅 Book Intro Call</a>
+      <a class="btn btn-ghost" href="https://linkedin.com/in/sultan-siddiqui" target="_blank">🔗 LinkedIn</a>
+    </div>
+    <button style="margin-top:18px" class="btn btn-ghost" onclick="startGame()">🔁 Play Again</button>
+  </div>
+
+  <!-- Toast -->
+  <div id="project-toast">
+    <div class="toast-title" id="toast-title"></div>
+    <div class="toast-desc" id="toast-desc"></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 480, H = 280;
+const GROUND = H - 48;
+
+// ── PROJECT DATA ──────────────────────────────────────────────────
+const PROJECTS = [
+  {
+    id: 'citi',
+    icon: '🏦',
+    color: '#3b82f6',
+    label: 'CITI',
+    title: 'Citi — Analytics & BA',
+    body: 'Built Power BI dashboards tracking $2B+ credit card portfolio KPIs. Authored BRDs/FRDs with 30+ stakeholders and cut reporting time by 40% via SQL automation.',
+    tags: ['Power BI', 'SQL', 'BRD/FRD', 'Stakeholder Mgmt']
+  },
+  {
+    id: 'hotel',
+    icon: '🏨',
+    color: '#f59e0b',
+    label: 'HOTEL',
+    title: 'Hotel Operations Digitization',
+    body: 'Led end-to-end digital transformation of reservations, F&B, and revenue management. Designed process flows in Visio, reduced manual ops by 35%, and integrated PMS systems.',
+    tags: ['Process Mapping', 'Visio', 'PMS Integration', 'Agile']
+  },
+  {
+    id: 'telecom',
+    icon: '📡',
+    color: '#10b981',
+    label: 'BSNL',
+    title: 'Telecom Diagnostics — BSNL',
+    body: 'Designed optical fiber diagnostics dashboards and network fault-analysis pipelines. Applied OTDR data analysis, reducing network downtime by 25% in target zones.',
+    tags: ['OTDR Analysis', 'Network Ops', 'Python', 'Tableau']
+  },
+  {
+    id: 'crypto',
+    icon: '₿',
+    color: '#f97316',
+    label: 'CRYPTO',
+    title: 'Crypto Analytics Dashboard',
+    body: 'Built real-time crypto portfolio tracker using Python & Plotly with live API feeds. Added SHAP-based model interpretability for price-movement signals across 20+ assets.',
+    tags: ['Python', 'Plotly', 'REST API', 'SHAP']
+  }
+];
+
+// ── GAME STATE ────────────────────────────────────────────────────
+let state = 'idle';
+let score = 0;
+let projectIndex = 0;
+let frameId;
+
+const player = { x: 72, y: GROUND, w: 28, h: 36, vy: 0, jumping: false };
+const obstacles = [];
+let bgX = 0, groundX = 0;
+let spawnTimer = 0;
+let nextSpawnAt = 110;
+let toastTimer = 0;
+let speed = 3.2;
+
+// ── SCREENS ───────────────────────────────────────────────────────
+const screens = {
+  splash: document.querySelector('[data-screen="splash"]'),
+  project: document.querySelector('[data-screen="project"]'),
+  end: document.querySelector('[data-screen="end"]')
+};
+
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.add('hidden'));
+  if (name) screens[name].classList.remove('hidden');
+  document.getElementById('tap-hint').style.display = name ? 'none' : 'block';
+}
+
+function showProjectCard(p) {
+  document.getElementById('proj-icon').textContent = p.icon;
+  document.getElementById('proj-title').textContent = p.title;
+  document.getElementById('proj-body').textContent = p.body;
+  document.getElementById('proj-tags').innerHTML = p.tags.map(t => `<span class="pill">${t}</span>`).join('');
+  showScreen('project');
+  state = 'card';
+  cancelAnimationFrame(frameId);
+}
+
+// ── GAME CONTROL ─────────────────────────────────────────────────
+function startGame() {
+  score = 0; projectIndex = 0; speed = 3.2;
+  player.y = GROUND; player.vy = 0; player.jumping = false;
+  obstacles.length = 0;
+  spawnTimer = 0; nextSpawnAt = 120;
+  bgX = 0; groundX = 0;
+  document.getElementById('score-val').textContent = 0;
+  showScreen(null);
+  document.getElementById('tap-hint').style.display = 'block';
+  state = 'running';
+  loop();
+}
+
+function resumeGame() {
+  showScreen(null);
+  document.getElementById('tap-hint').style.display = 'block';
+  state = 'running';
+  loop();
+}
+
+function jump() {
+  if (state === 'running' && !player.jumping) {
+    player.vy = -9.5;
+    player.jumping = true;
+  }
+}
+
+// ── SPAWN ─────────────────────────────────────────────────────────
+function spawnObstacle() {
+  const p = PROJECTS[projectIndex % PROJECTS.length];
+  const h = 38 + Math.random() * 22;
+  obstacles.push({
+    x: W + 20, y: GROUND - h + player.h, w: 22, h,
+    color: p.color, label: p.label, projectIdx: projectIndex,
+    passed: false
+  });
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function showToast(title, desc) {
+  const t = document.getElementById('project-toast');
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-desc').textContent = desc;
+  t.classList.add('show');
+  toastTimer = 120;
+}
+
+// ── DRAW ──────────────────────────────────────────────────────────
+function drawBG() {
+  // Sky gradient
+  const g = ctx.createLinearGradient(0, 0, 0, GROUND);
+  g.addColorStop(0, '#0d0d1f'); g.addColorStop(1, '#1a1a3e');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  for (let i = 0; i < 40; i++) {
+    const sx = ((i * 137 + bgX * 0.2) % W + W) % W;
+    const sy = (i * 53) % (GROUND - 20);
+    ctx.fillRect(sx, sy, 1.5, 1.5);
+  }
+
+  // City silhouette
+  ctx.fillStyle = 'rgba(30,30,70,0.8)';
+  const bldgs = [60,90,50,80,110,70,55,95,65,85,75,100];
+  bldgs.forEach((bh, i) => {
+    const bx = ((i * 40 - bgX * 0.5) % W + W) % W;
+    ctx.fillRect(bx, GROUND - bh, 28, bh);
+  });
+
+  // Ground
+  ctx.fillStyle = '#1e1e4a';
+  ctx.fillRect(0, GROUND, W, H - GROUND);
+  ctx.fillStyle = '#3b3b7a';
+  ctx.fillRect(0, GROUND, W, 3);
+
+  // Ground dashes
+  ctx.fillStyle = 'rgba(99,179,255,0.25)';
+  for (let i = 0; i < 8; i++) {
+    const dx = ((i * 64 - groundX) % W + W) % W;
+    ctx.fillRect(dx, GROUND + 10, 32, 3);
+  }
+}
+
+function drawPlayer() {
+  const px = player.x, py = player.y;
+  // Body
+  ctx.fillStyle = '#63b3ff';
+  ctx.beginPath();
+  ctx.roundRect(px, py, player.w, player.h, 6);
+  ctx.fill();
+  // Head
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.arc(px + player.w / 2, py - 9, 9, 0, Math.PI * 2);
+  ctx.fill();
+  // Eye
+  ctx.fillStyle = '#0f0f1a';
+  ctx.beginPath();
+  ctx.arc(px + player.w / 2 + 3, py - 10, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  // Laptop icon
+  ctx.fillStyle = '#a78bfa';
+  ctx.fillRect(px + 5, py + 8, 18, 12);
+  ctx.fillStyle = '#0f0f1a';
+  ctx.fillRect(px + 7, py + 10, 14, 8);
+}
+
+function drawObstacle(o) {
+  // Block
+  ctx.fillStyle = o.color;
+  ctx.beginPath();
+  ctx.roundRect(o.x, o.y, o.w, o.h, 4);
+  ctx.fill();
+  // Glow
+  ctx.shadowColor = o.color;
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = o.color;
+  ctx.beginPath();
+  ctx.roundRect(o.x, o.y, o.w, o.h, 4);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  // Label (vertical)
+  ctx.save();
+  ctx.translate(o.x + o.w / 2, o.y + o.h / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 9px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText(o.label, 0, 3);
+  ctx.restore();
+}
+
+function drawHUD() {
+  // Progress bar
+  const pct = Math.min(projectIndex / PROJECTS.length, 1);
+  ctx.fillStyle = 'rgba(99,179,255,0.15)';
+  ctx.fillRect(12, 12, 200, 6);
+  ctx.fillStyle = '#63b3ff';
+  ctx.fillRect(12, 12, 200 * pct, 6);
+  ctx.fillStyle = '#a0aec0';
+  ctx.font = '10px Segoe UI';
+  ctx.fillText(`${projectIndex}/${PROJECTS.length} projects`, 12, 30);
+}
+
+// ── LOOP ──────────────────────────────────────────────────────────
+function loop() {
+  if (state !== 'running') return;
+  frameId = requestAnimationFrame(loop);
+
+  // Update BG scroll
+  bgX += speed * 0.4;
+  groundX += speed;
+
+  // Player physics
+  player.vy += 0.55;
+  player.y += player.vy;
+  if (player.y >= GROUND) {
+    player.y = GROUND;
+    player.vy = 0;
+    player.jumping = false;
+  }
+
+  // Spawn
+  spawnTimer++;
+  if (spawnTimer >= nextSpawnAt) {
+    spawnObstacle();
+    spawnTimer = 0;
+    nextSpawnAt = 120 + Math.random() * 80;
+  }
+
+  // Move obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.x -= speed;
+    // Passed?
+    if (!o.passed && o.x + o.w < player.x) {
+      o.passed = true;
+      score++;
+      document.getElementById('score-val').textContent = score;
+      // Show card when cleared the project obstacle
+      if (o.projectIdx === projectIndex && projectIndex < PROJECTS.length) {
+        projectIndex++;
+        speed = Math.min(speed + 0.3, 6.5);
+        if (projectIndex < PROJECTS.length) {
+          showProjectCard(PROJECTS[o.projectIdx]);
+        } else {
+          // All done
+          cancelAnimationFrame(frameId);
+          setTimeout(() => showScreen('end'), 600);
+          state = 'done';
+        }
+        return;
+      }
+    }
+    // Off screen
+    if (o.x + o.w < -10) { obstacles.splice(i, 1); continue; }
+
+    // Collision
+    if (
+      player.x + player.w - 6 > o.x + 3 &&
+      player.x + 6 < o.x + o.w - 3 &&
+      player.y + player.h > o.y + 4
+    ) {
+      // Hit! flash and reset run (no game-over, just bounce back)
+      player.vy = -7;
+      player.jumping = true;
+      obstacles.splice(i, 1);
+      break;
+    }
+  }
+
+  // Toast timer
+  if (toastTimer > 0) {
+    toastTimer--;
+    if (toastTimer === 0) document.getElementById('project-toast').classList.remove('show');
+  }
+
+  // Draw
+  drawBG();
+  obstacles.forEach(drawObstacle);
+  drawPlayer();
+  drawHUD();
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.key === 'ArrowUp') { e.preventDefault(); jump(); }
+});
+canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
+canvas.addEventListener('mousedown', () => jump());
+
+// ── INIT ──────────────────────────────────────────────────────────
+showScreen('splash');
+drawBG();
+</script>
+</body>
+</html>
