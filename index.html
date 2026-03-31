@@ -4,491 +4,794 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Sultan's Resume Run</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #0f0f1a;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    min-height: 100vh;
-    font-family: 'Segoe UI', sans-serif;
-    color: #fff;
-    overflow: hidden;
-    touch-action: none;
-  }
-  #game-wrapper {
-    position: relative;
-    width: min(480px, 100vw);
-    max-width: 480px;
-  }
-  canvas {
-    display: block;
-    width: 100%;
-    border-radius: 12px;
-    box-shadow: 0 0 40px rgba(99,179,255,0.3);
-  }
-  #ui-overlay {
-    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    border-radius: 12px;
-    background: rgba(10,10,26,0.88);
-    backdrop-filter: blur(4px);
-    padding: 24px;
-    text-align: center;
-  }
-  #ui-overlay.hidden { display: none; }
-  #ui-overlay h1 {
-    font-size: clamp(1.4rem, 5vw, 2rem);
-    background: linear-gradient(135deg, #63b3ff, #a78bfa);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
-  }
-  #ui-overlay p {
-    color: #a0aec0; font-size: 0.9rem; line-height: 1.6;
-    max-width: 340px; margin-bottom: 20px;
-  }
-  .pill {
-    display: inline-block;
-    background: rgba(99,179,255,0.15);
-    border: 1px solid rgba(99,179,255,0.4);
-    border-radius: 999px;
-    padding: 4px 14px;
-    font-size: 0.78rem;
-    color: #63b3ff;
-    margin: 3px;
-  }
-  .pills { margin-bottom: 20px; }
-  .btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 12px 28px; border-radius: 999px;
-    font-size: 1rem; font-weight: 600;
-    border: none; cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
-    text-decoration: none;
-  }
-  .btn:active { transform: scale(0.96); }
-  .btn-primary {
-    background: linear-gradient(135deg, #63b3ff, #a78bfa);
-    color: #0f0f1a;
-    box-shadow: 0 4px 20px rgba(99,179,255,0.4);
-  }
-  .btn-secondary {
-    background: rgba(167,139,250,0.15);
-    border: 1px solid rgba(167,139,250,0.5);
-    color: #a78bfa;
-  }
-  .btn-ghost {
-    background: rgba(99,179,255,0.1);
-    border: 1px solid rgba(99,179,255,0.3);
-    color: #63b3ff;
-  }
-  .btn-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 12px; }
-  #score-hud {
-    position: absolute; top: 12px; right: 16px;
-    font-size: 0.85rem; color: #a0aec0;
-    pointer-events: none;
-  }
-  #project-toast {
-    position: absolute; bottom: 16px; left: 50%;
-    transform: translateX(-50%);
-    background: rgba(15,15,26,0.95);
-    border: 1px solid rgba(99,179,255,0.4);
-    border-radius: 10px;
-    padding: 10px 18px;
-    text-align: center;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-    width: 90%;
-    max-width: 420px;
-  }
-  #project-toast.show { opacity: 1; }
-  #project-toast .toast-title {
-    font-size: 0.85rem; font-weight: 700;
-    color: #63b3ff;
-  }
-  #project-toast .toast-desc {
-    font-size: 0.75rem; color: #a0aec0; margin-top: 2px;
-  }
-  #tap-hint {
-    position: absolute; bottom: 80px; left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.78rem; color: rgba(160,174,192,0.6);
-    pointer-events: none;
-    animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 0.5; }
-    50% { opacity: 1; }
-  }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:#07071a;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  min-height:100vh;
+  font-family:'Space Grotesk',sans-serif;
+  color:#fff;
+  overflow:hidden;
+  touch-action:none;
+}
+
+#game-wrapper{
+  position:relative;
+  width:min(540px,100vw);
+  max-width:540px;
+}
+
+canvas{
+  display:block;width:100%;
+  border-radius:16px;
+  box-shadow:0 0 0 1px rgba(99,179,255,0.15),
+             0 0 60px rgba(99,179,255,0.2),
+             0 20px 60px rgba(0,0,0,0.6);
+}
+
+/* ── OVERLAY SCREENS ────────────────────────────── */
+.screen{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  border-radius:16px;
+  background:rgba(7,7,26,0.92);
+  backdrop-filter:blur(8px);
+  padding:28px 24px;
+  text-align:center;
+  transition:opacity 0.3s,transform 0.3s;
+}
+.screen.hidden{
+  opacity:0;pointer-events:none;
+  transform:scale(0.97);
+}
+
+.screen-title{
+  font-size:clamp(1.3rem,5vw,1.9rem);
+  font-weight:700;
+  background:linear-gradient(135deg,#60c6ff,#c084fc,#f472b6);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1.2;margin-bottom:6px;
+}
+.screen-sub{
+  color:#94a3b8;font-size:0.88rem;
+  line-height:1.65;max-width:360px;
+  margin-bottom:18px;
+}
+
+/* Pills */
+.pills{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:20px;}
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 14px;border-radius:999px;
+  font-size:0.75rem;font-weight:600;
+  border:1px solid rgba(99,179,255,0.3);
+  background:rgba(99,179,255,0.08);
+  color:#93c5fd;
+  letter-spacing:0.02em;
+}
+.pill.amber{border-color:rgba(251,191,36,0.3);background:rgba(251,191,36,0.08);color:#fbbf24;}
+.pill.green{border-color:rgba(52,211,153,0.3);background:rgba(52,211,153,0.08);color:#34d399;}
+.pill.orange{border-color:rgba(251,146,60,0.3);background:rgba(251,146,60,0.08);color:#fb923c;}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 30px;border-radius:999px;
+  font-size:0.95rem;font-weight:700;
+  font-family:inherit;
+  border:none;cursor:pointer;
+  transition:transform 0.15s,box-shadow 0.2s,filter 0.2s;
+  text-decoration:none;
+  letter-spacing:0.01em;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.1);}
+.btn:active{transform:scale(0.95);}
+.btn-primary{
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+  color:#fff;
+  box-shadow:0 4px 24px rgba(99,102,241,0.5);
+}
+.btn-resume{
+  background:linear-gradient(135deg,#059669,#0ea5e9);
+  color:#fff;
+  box-shadow:0 4px 24px rgba(14,165,233,0.4);
+}
+.btn-cal{
+  background:linear-gradient(135deg,#7c3aed,#db2777);
+  color:#fff;
+  box-shadow:0 4px 24px rgba(219,39,119,0.35);
+}
+.btn-li{
+  background:rgba(14,165,233,0.12);
+  border:1px solid rgba(14,165,233,0.4);
+  color:#38bdf8;
+}
+.btn-ghost{
+  background:rgba(99,179,255,0.07);
+  border:1px solid rgba(99,179,255,0.25);
+  color:#93c5fd;
+}
+.btn-row{
+  display:flex;flex-wrap:wrap;gap:10px;
+  justify-content:center;margin-top:14px;
+}
+
+/* Project card accent bar */
+.card-accent{
+  width:48px;height:4px;
+  border-radius:999px;
+  margin:0 auto 14px;
+  background:linear-gradient(90deg,#60c6ff,#c084fc);
+}
+
+/* Score / HUD */
+#hud-bar{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;
+  pointer-events:none;
+}
+#score-box{
+  display:flex;align-items:center;gap:5px;
+  font-size:0.8rem;font-weight:700;
+  color:#c084fc;
+  background:rgba(7,7,26,0.6);
+  border:1px solid rgba(192,132,252,0.25);
+  padding:4px 10px;border-radius:999px;
+}
+#lives-box{
+  display:flex;gap:4px;
+  background:rgba(7,7,26,0.6);
+  border:1px solid rgba(248,113,113,0.25);
+  padding:4px 10px;border-radius:999px;
+}
+
+/* Tap hint */
+#tap-hint{
+  position:absolute;bottom:14px;left:50%;
+  transform:translateX(-50%);
+  font-size:0.72rem;color:rgba(148,163,184,0.55);
+  pointer-events:none;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.4;}50%{opacity:1;}}
+
+/* Combo pop */
+#combo-pop{
+  position:absolute;top:40px;right:14px;
+  font-size:1.1rem;font-weight:700;
+  color:#fbbf24;
+  pointer-events:none;
+  opacity:0;
+  transform:translateY(0);
+  transition:none;
+  text-shadow:0 0 12px rgba(251,191,36,0.8);
+}
+#combo-pop.show{
+  animation:comboPop 0.8s ease-out forwards;
+}
+@keyframes comboPop{
+  0%{opacity:1;transform:translateY(0);}
+  100%{opacity:0;transform:translateY(-28px);}
+}
+
+/* End screen stats */
+.stat-row{
+  display:flex;gap:16px;margin-bottom:16px;
+  flex-wrap:wrap;justify-content:center;
+}
+.stat-card{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;
+  padding:10px 18px;
+  min-width:80px;
+}
+.stat-val{font-size:1.4rem;font-weight:700;color:#60c6ff;}
+.stat-lbl{font-size:0.7rem;color:#64748b;margin-top:2px;letter-spacing:0.05em;text-transform:uppercase;}
+
+/* Divider */
+.divider{
+  width:100%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(99,179,255,0.2),transparent);
+  margin:14px 0;
+}
 </style>
 </head>
 <body>
 <div id="game-wrapper">
-  <canvas id="c" width="480" height="280"></canvas>
-  <div id="score-hud">⭐ <span id="score-val">0</span></div>
-  <div id="tap-hint">TAP / SPACE to jump</div>
+  <canvas id="c" width="540" height="300"></canvas>
 
-  <!-- Splash Screen -->
-  <div id="ui-overlay" data-screen="splash">
-    <h1>Sultan's Resume Run 🏃</h1>
-    <p>Jump over 4 projects from my career. Each obstacle you clear reveals a real achievement!</p>
+  <!-- HUD -->
+  <div id="hud-bar">
+    <div id="score-box">⚡ <span id="score-val">0</span></div>
+    <div id="lives-box">❤️❤️❤️</div>
+  </div>
+  <div id="tap-hint">Tap or Space to jump</div>
+  <div id="combo-pop"></div>
+
+  <!-- SPLASH -->
+  <div class="screen" id="s-splash">
+    <div style="font-size:3rem;margin-bottom:6px;line-height:1">🏃‍♂️</div>
+    <div class="screen-title">Sultan's Resume Run</div>
+    <p class="screen-sub">Jump 4 career milestones.<br>Each one reveals a real project from my resume.</p>
     <div class="pills">
       <span class="pill">🏦 Citi Analytics</span>
-      <span class="pill">🏨 Hotel Ops</span>
-      <span class="pill">📡 Telecom</span>
-      <span class="pill">₿ Crypto</span>
+      <span class="pill amber">🏨 Hotel Ops</span>
+      <span class="pill green">📡 Telecom</span>
+      <span class="pill orange">₿ Crypto</span>
     </div>
-    <button class="btn btn-primary" onclick="startGame()">▶ Start Running</button>
+    <button class="btn btn-primary" onclick="startGame()">▶&nbsp; Start Running</button>
+    <p style="font-size:0.7rem;color:#475569;margin-top:14px">Keyboard · Touch · Mouse — all supported</p>
   </div>
 
-  <!-- Project Card Screen -->
-  <div id="ui-overlay" data-screen="project" class="hidden" id="proj-screen">
-    <div id="proj-icon" style="font-size:2.5rem;margin-bottom:8px"></div>
-    <h1 id="proj-title"></h1>
-    <p id="proj-body"></p>
+  <!-- PROJECT CARD -->
+  <div class="screen hidden" id="s-project">
+    <div id="proj-emoji" style="font-size:2.8rem;margin-bottom:4px"></div>
+    <div class="card-accent" id="proj-accent"></div>
+    <div class="screen-title" id="proj-title"></div>
+    <p class="screen-sub" id="proj-body"></p>
     <div class="pills" id="proj-tags"></div>
     <button class="btn btn-primary" onclick="resumeGame()">Keep Running →</button>
   </div>
 
-  <!-- End Screen -->
-  <div id="ui-overlay" data-screen="end" class="hidden" id="end-screen">
-    <div style="font-size:2.5rem;margin-bottom:8px">🎉</div>
-    <h1>You cleared all 4 projects!</h1>
-    <p>That's Sultan Siddiqui — Senior Business Analyst with 4+ years across banking, hospitality, telecom & fintech. Let's connect.</p>
-    <div class="btn-row">
-      <a class="btn btn-primary" href="https://drive.google.com/file/d/YOUR_RESUME_ID/view" target="_blank">📄 Download Resume</a>
-      <a class="btn btn-secondary" href="https://calendly.com/sultansiddiqui123" target="_blank">📅 Book Intro Call</a>
-      <a class="btn btn-ghost" href="https://linkedin.com/in/sultan-siddiqui" target="_blank">🔗 LinkedIn</a>
+  <!-- END -->
+  <div class="screen hidden" id="s-end">
+    <div id="confetti-area" style="position:absolute;top:0;left:0;right:0;height:60px;pointer-events:none;overflow:hidden"></div>
+    <div style="font-size:2.5rem;margin-bottom:4px">🎉</div>
+    <div class="screen-title">All 4 Projects Cleared!</div>
+    <p class="screen-sub">That's Sultan Siddiqui — Senior Business Analyst, 4+ yrs across banking, hospitality, telecom & fintech.</p>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-val">4+</div><div class="stat-lbl">Years Exp</div></div>
+      <div class="stat-card"><div class="stat-val">40%</div><div class="stat-lbl">Efficiency ↑</div></div>
+      <div class="stat-card"><div class="stat-val">30+</div><div class="stat-lbl">Stakeholders</div></div>
     </div>
-    <button style="margin-top:18px" class="btn btn-ghost" onclick="startGame()">🔁 Play Again</button>
-  </div>
-
-  <!-- Toast -->
-  <div id="project-toast">
-    <div class="toast-title" id="toast-title"></div>
-    <div class="toast-desc" id="toast-desc"></div>
+    <div class="divider"></div>
+    <div class="btn-row">
+      <a class="btn btn-resume" href="https://drive.google.com/file/d/YOUR_RESUME_ID/view" target="_blank">📄 Download Resume</a>
+      <a class="btn btn-cal" href="https://calendly.com/sultansiddiqui123" target="_blank">📅 Book Intro Call</a>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-li" href="https://linkedin.com/in/sultan-siddiqui" target="_blank">🔗 LinkedIn</a>
+      <button class="btn btn-ghost" onclick="startGame()">🔁 Play Again</button>
+    </div>
   </div>
 </div>
 
 <script>
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const W = 480, H = 280;
-const GROUND = H - 48;
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+const W = 540, H = 300;
+const GY = H - 52; // ground Y
 
-// ── PROJECT DATA ──────────────────────────────────────────────────
+// ── PROJECTS ─────────────────────────────────────────────
 const PROJECTS = [
-  {
-    id: 'citi',
-    icon: '🏦',
-    color: '#3b82f6',
-    label: 'CITI',
-    title: 'Citi — Analytics & BA',
-    body: 'Built Power BI dashboards tracking $2B+ credit card portfolio KPIs. Authored BRDs/FRDs with 30+ stakeholders and cut reporting time by 40% via SQL automation.',
-    tags: ['Power BI', 'SQL', 'BRD/FRD', 'Stakeholder Mgmt']
-  },
-  {
-    id: 'hotel',
-    icon: '🏨',
-    color: '#f59e0b',
-    label: 'HOTEL',
-    title: 'Hotel Operations Digitization',
-    body: 'Led end-to-end digital transformation of reservations, F&B, and revenue management. Designed process flows in Visio, reduced manual ops by 35%, and integrated PMS systems.',
-    tags: ['Process Mapping', 'Visio', 'PMS Integration', 'Agile']
-  },
-  {
-    id: 'telecom',
-    icon: '📡',
-    color: '#10b981',
-    label: 'BSNL',
-    title: 'Telecom Diagnostics — BSNL',
-    body: 'Designed optical fiber diagnostics dashboards and network fault-analysis pipelines. Applied OTDR data analysis, reducing network downtime by 25% in target zones.',
-    tags: ['OTDR Analysis', 'Network Ops', 'Python', 'Tableau']
-  },
-  {
-    id: 'crypto',
-    icon: '₿',
-    color: '#f97316',
-    label: 'CRYPTO',
-    title: 'Crypto Analytics Dashboard',
-    body: 'Built real-time crypto portfolio tracker using Python & Plotly with live API feeds. Added SHAP-based model interpretability for price-movement signals across 20+ assets.',
-    tags: ['Python', 'Plotly', 'REST API', 'SHAP']
-  }
+  { id:'citi',   emoji:'🏦', color:'#3b82f6', glowColor:'rgba(59,130,246,0.7)', label:'CITI',
+    title:'Citi — Analytics & BA',
+    body:'Built Power BI dashboards tracking a $2B+ credit card portfolio. Authored BRDs with 30+ stakeholders and cut reporting time by 40% via SQL automation.',
+    tags:['Power BI','SQL','BRD/FRD','Stakeholder Mgmt'], tagClass:'' },
+  { id:'hotel',  emoji:'🏨', color:'#f59e0b', glowColor:'rgba(245,158,11,0.7)', label:'HOTEL',
+    title:'Hotel Operations Digitization',
+    body:'Led digital transformation of reservations, F&B & revenue management. Designed Visio process flows, reduced manual ops by 35%, and integrated PMS systems.',
+    tags:['Process Mapping','Visio','PMS Integration','Agile'], tagClass:'amber' },
+  { id:'bsnl',   emoji:'📡', color:'#10b981', glowColor:'rgba(16,185,129,0.7)', label:'BSNL',
+    title:'Telecom Diagnostics — BSNL',
+    body:'Built optical fiber diagnostics dashboards and fault-analysis pipelines. OTDR-based analysis reduced network downtime by 25% across target zones.',
+    tags:['OTDR Analysis','Network Ops','Python','Tableau'], tagClass:'green' },
+  { id:'crypto', emoji:'₿',  color:'#f97316', glowColor:'rgba(249,115,22,0.7)', label:'CRYPTO',
+    title:'Crypto Analytics Dashboard',
+    body:'Real-time portfolio tracker in Python & Plotly with live API feeds. SHAP-based model interpretability for price-movement signals across 20+ assets.',
+    tags:['Python','Plotly','REST API','SHAP'], tagClass:'orange' }
 ];
 
-// ── GAME STATE ────────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────
 let state = 'idle';
-let score = 0;
-let projectIndex = 0;
-let frameId;
+let score = 0, projectIdx = 0, lives = 3, frameId;
+let speed = 3.4;
+let bgX = 0, fg1X = 0, groundX = 0;
+let spawnTimer = 0, nextSpawn = 130;
+let particles = [];
+let hits = 0;
 
-const player = { x: 72, y: GROUND, w: 28, h: 36, vy: 0, jumping: false };
-const obstacles = [];
-let bgX = 0, groundX = 0;
-let spawnTimer = 0;
-let nextSpawnAt = 110;
-let toastTimer = 0;
-let speed = 3.2;
+const PL = { x:80, y:GY, w:26, h:36, vy:0, jumping:false, trail:[] };
+const OBS = [];
 
-// ── SCREENS ───────────────────────────────────────────────────────
-const screens = {
-  splash: document.querySelector('[data-screen="splash"]'),
-  project: document.querySelector('[data-screen="project"]'),
-  end: document.querySelector('[data-screen="end"]')
+// screen refs
+const SC = {
+  splash:  document.getElementById('s-splash'),
+  project: document.getElementById('s-project'),
+  end:     document.getElementById('s-end')
 };
 
-function showScreen(name) {
-  Object.values(screens).forEach(s => s.classList.add('hidden'));
-  if (name) screens[name].classList.remove('hidden');
-  document.getElementById('tap-hint').style.display = name ? 'none' : 'block';
+// ── SCREEN HELPERS ────────────────────────────────────────
+function showScreen(name){
+  Object.values(SC).forEach(s=>s.classList.add('hidden'));
+  document.getElementById('tap-hint').style.display = name?'none':'block';
+  document.getElementById('hud-bar').style.opacity = name?'0':'1';
+  if(name) SC[name].classList.remove('hidden');
 }
 
-function showProjectCard(p) {
-  document.getElementById('proj-icon').textContent = p.icon;
+function showProjectCard(p){
+  document.getElementById('proj-emoji').textContent = p.emoji;
   document.getElementById('proj-title').textContent = p.title;
-  document.getElementById('proj-body').textContent = p.body;
-  document.getElementById('proj-tags').innerHTML = p.tags.map(t => `<span class="pill">${t}</span>`).join('');
+  document.getElementById('proj-body').textContent  = p.body;
+  const accent = document.getElementById('proj-accent');
+  accent.style.background = `linear-gradient(90deg,${p.color},#c084fc)`;
+  document.getElementById('proj-tags').innerHTML =
+    p.tags.map(t=>`<span class="pill ${p.tagClass}">${t}</span>`).join('');
   showScreen('project');
   state = 'card';
   cancelAnimationFrame(frameId);
 }
 
-// ── GAME CONTROL ─────────────────────────────────────────────────
-function startGame() {
-  score = 0; projectIndex = 0; speed = 3.2;
-  player.y = GROUND; player.vy = 0; player.jumping = false;
-  obstacles.length = 0;
-  spawnTimer = 0; nextSpawnAt = 120;
-  bgX = 0; groundX = 0;
-  document.getElementById('score-val').textContent = 0;
+// ── GAME CONTROL ──────────────────────────────────────────
+function startGame(){
+  score=0; projectIdx=0; lives=3; speed=3.4; hits=0;
+  PL.y=GY; PL.vy=0; PL.jumping=false; PL.trail=[];
+  OBS.length=0; particles.length=0;
+  bgX=0; fg1X=0; groundX=0;
+  spawnTimer=0; nextSpawn=130;
+  document.getElementById('score-val').textContent='0';
+  updateLives();
   showScreen(null);
-  document.getElementById('tap-hint').style.display = 'block';
-  state = 'running';
+  state='running';
   loop();
 }
 
-function resumeGame() {
+function resumeGame(){
   showScreen(null);
-  document.getElementById('tap-hint').style.display = 'block';
-  state = 'running';
+  state='running';
   loop();
 }
 
-function jump() {
-  if (state === 'running' && !player.jumping) {
-    player.vy = -9.5;
-    player.jumping = true;
+function updateLives(){
+  document.getElementById('lives-box').textContent=
+    '❤️'.repeat(lives)+'🖤'.repeat(Math.max(0,3-lives));
+}
+
+function jump(){
+  if(state==='running' && !PL.jumping){
+    PL.vy=-10.5;
+    PL.jumping=true;
+    spawnJumpParticles();
   }
 }
 
-// ── SPAWN ─────────────────────────────────────────────────────────
-function spawnObstacle() {
-  const p = PROJECTS[projectIndex % PROJECTS.length];
-  const h = 38 + Math.random() * 22;
-  obstacles.push({
-    x: W + 20, y: GROUND - h + player.h, w: 22, h,
-    color: p.color, label: p.label, projectIdx: projectIndex,
-    passed: false
+// ── PARTICLES ─────────────────────────────────────────────
+function spawnJumpParticles(){
+  for(let i=0;i<8;i++){
+    particles.push({
+      x:PL.x+PL.w/2, y:PL.y+PL.h,
+      vx:(Math.random()-0.5)*3,
+      vy:Math.random()*2+1,
+      life:1, size:Math.random()*3+1,
+      color:`hsl(${200+Math.random()*60},80%,65%)`
+    });
+  }
+}
+
+function spawnClearParticles(ox,oy,color){
+  for(let i=0;i<22;i++){
+    const angle = Math.random()*Math.PI*2;
+    const spd   = Math.random()*5+2;
+    particles.push({
+      x:ox, y:oy,
+      vx:Math.cos(angle)*spd,
+      vy:Math.sin(angle)*spd-3,
+      life:1, size:Math.random()*4+2,
+      color:i%2===0?color:'#fff'
+    });
+  }
+}
+
+function spawnHitParticles(ox,oy){
+  for(let i=0;i<14;i++){
+    particles.push({
+      x:ox,y:oy,
+      vx:(Math.random()-0.5)*6,
+      vy:Math.random()*-5-1,
+      life:1,size:Math.random()*3+1,
+      color:`hsl(${Math.random()*30},100%,60%)`
+    });
+  }
+}
+
+// ── SPAWN OBSTACLES ───────────────────────────────────────
+function spawnObs(){
+  const p = PROJECTS[projectIdx % PROJECTS.length];
+  const h = 40 + Math.random()*24;
+  OBS.push({
+    x:W+20, y:GY - h + PL.h, w:24, h,
+    color:p.color, glow:p.glowColor,
+    label:p.label, projectIdx:projectIdx,
+    passed:false, pulse:0
   });
 }
 
-// ── TOAST ─────────────────────────────────────────────────────────
-function showToast(title, desc) {
-  const t = document.getElementById('project-toast');
-  document.getElementById('toast-title').textContent = title;
-  document.getElementById('toast-desc').textContent = desc;
-  t.classList.add('show');
-  toastTimer = 120;
+// ── DRAW HELPERS ──────────────────────────────────────────
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.roundRect(x,y,w,h,r);
 }
 
-// ── DRAW ──────────────────────────────────────────────────────────
-function drawBG() {
-  // Sky gradient
-  const g = ctx.createLinearGradient(0, 0, 0, GROUND);
-  g.addColorStop(0, '#0d0d1f'); g.addColorStop(1, '#1a1a3e');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+function drawBG(){
+  // Deep sky
+  const sky = ctx.createLinearGradient(0,0,0,GY);
+  sky.addColorStop(0,'#03030f');
+  sky.addColorStop(0.6,'#0d0d2b');
+  sky.addColorStop(1,'#131340');
+  ctx.fillStyle=sky;
+  ctx.fillRect(0,0,W,H);
 
-  // Stars
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  for (let i = 0; i < 40; i++) {
-    const sx = ((i * 137 + bgX * 0.2) % W + W) % W;
-    const sy = (i * 53) % (GROUND - 20);
-    ctx.fillRect(sx, sy, 1.5, 1.5);
+  // Nebula glow
+  const nb = ctx.createRadialGradient(W*0.6,GY*0.35,10,W*0.6,GY*0.35,180);
+  nb.addColorStop(0,'rgba(139,92,246,0.08)');
+  nb.addColorStop(1,'transparent');
+  ctx.fillStyle=nb;
+  ctx.fillRect(0,0,W,H);
+
+  // Stars (two layers, different parallax)
+  for(let i=0;i<55;i++){
+    const sx = ((i*137.5 + bgX*0.15)%W+W)%W;
+    const sy = (i*53)%(GY-15);
+    const r  = i%7===0?2:1;
+    ctx.fillStyle = i%11===0?'rgba(192,132,252,0.7)':'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.arc(sx,sy,r,0,Math.PI*2);
+    ctx.fill();
   }
 
-  // City silhouette
-  ctx.fillStyle = 'rgba(30,30,70,0.8)';
-  const bldgs = [60,90,50,80,110,70,55,95,65,85,75,100];
-  bldgs.forEach((bh, i) => {
-    const bx = ((i * 40 - bgX * 0.5) % W + W) % W;
-    ctx.fillRect(bx, GROUND - bh, 28, bh);
+  // Far city silhouette (slow)
+  ctx.fillStyle='rgba(20,20,55,0.9)';
+  const farB=[55,90,60,80,100,50,70,115,60,85,75,95,65,105];
+  farB.forEach((bh,i)=>{
+    const bx=((i*44 - bgX*0.3)%W+W)%W;
+    ctx.fillRect(bx, GY-bh, 32, bh);
+    // windows
+    ctx.fillStyle='rgba(255,255,160,0.12)';
+    for(let wr=0;wr<3;wr++) for(let wc=0;wc<2;wc++)
+      ctx.fillRect(bx+4+wc*10, GY-bh+6+wr*14, 6, 5);
+    ctx.fillStyle='rgba(20,20,55,0.9)';
   });
 
-  // Ground
-  ctx.fillStyle = '#1e1e4a';
-  ctx.fillRect(0, GROUND, W, H - GROUND);
-  ctx.fillStyle = '#3b3b7a';
-  ctx.fillRect(0, GROUND, W, 3);
+  // Near city silhouette (faster)
+  ctx.fillStyle='rgba(12,12,38,0.95)';
+  const nearB=[40,70,45,65,90,55,48,80,60,72];
+  nearB.forEach((bh,i)=>{
+    const bx=((i*56 - bgX*0.65)%W+W)%W;
+    ctx.fillRect(bx, GY-bh, 38, bh);
+    // lit windows
+    if(Math.floor((bgX*0.65+i*56)/56)%3!==0){
+      ctx.fillStyle='rgba(147,197,253,0.18)';
+      for(let wr=0;wr<2;wr++) for(let wc=0;wc<2;wc++)
+        ctx.fillRect(bx+5+wc*14, GY-bh+8+wr*16, 8, 7);
+      ctx.fillStyle='rgba(12,12,38,0.95)';
+    }
+  });
+
+  // Ground base
+  const grd = ctx.createLinearGradient(0,GY,0,H);
+  grd.addColorStop(0,'#14144a');
+  grd.addColorStop(1,'#0a0a2a');
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,GY,W,H-GY);
+
+  // Ground glow line
+  ctx.fillStyle='rgba(96,198,255,0.5)';
+  ctx.fillRect(0,GY,W,2);
 
   // Ground dashes
-  ctx.fillStyle = 'rgba(99,179,255,0.25)';
-  for (let i = 0; i < 8; i++) {
-    const dx = ((i * 64 - groundX) % W + W) % W;
-    ctx.fillRect(dx, GROUND + 10, 32, 3);
+  for(let i=0;i<10;i++){
+    const dx=((i*60 - groundX)%W+W)%W;
+    const alpha = 0.12 + 0.08*Math.sin(groundX*0.05+i);
+    ctx.fillStyle=`rgba(96,198,255,${alpha})`;
+    ctx.fillRect(dx,GY+12,36,2);
   }
 }
 
-function drawPlayer() {
-  const px = player.x, py = player.y;
+function drawPlayer(){
+  const {x,y,w,h,jumping} = PL;
+
+  // Trail
+  PL.trail.push({x,y,alpha:0.35});
+  if(PL.trail.length>8) PL.trail.shift();
+  PL.trail.forEach((t,i)=>{
+    const a = t.alpha*(i/PL.trail.length)*0.5;
+    ctx.fillStyle=`rgba(96,198,255,${a})`;
+    roundRect(t.x,t.y,w,h,6);
+    ctx.fill();
+  });
+
+  // Shadow on ground
+  if(!jumping){
+    const sg = ctx.createRadialGradient(x+w/2,GY+2,0,x+w/2,GY+2,20);
+    sg.addColorStop(0,'rgba(0,0,0,0.35)');
+    sg.addColorStop(1,'transparent');
+    ctx.fillStyle=sg;
+    ctx.fillRect(x-8,GY,w+16,8);
+  }
+
+  // Body glow
+  ctx.shadowColor='rgba(96,198,255,0.5)';
+  ctx.shadowBlur=14;
+
   // Body
-  ctx.fillStyle = '#63b3ff';
-  ctx.beginPath();
-  ctx.roundRect(px, py, player.w, player.h, 6);
+  const bodyGrad = ctx.createLinearGradient(x,y,x+w,y+h);
+  bodyGrad.addColorStop(0,'#60c6ff');
+  bodyGrad.addColorStop(1,'#3b82f6');
+  ctx.fillStyle=bodyGrad;
+  roundRect(x,y,w,h,7);
   ctx.fill();
+
+  // Body shine
+  ctx.fillStyle='rgba(255,255,255,0.18)';
+  roundRect(x+3,y+3,w-6,8,4);
+  ctx.fill();
+  ctx.shadowBlur=0;
+
   // Head
-  ctx.fillStyle = '#fbbf24';
+  ctx.shadowColor='rgba(251,191,36,0.4)';
+  ctx.shadowBlur=8;
+  ctx.fillStyle='#fbbf24';
   ctx.beginPath();
-  ctx.arc(px + player.w / 2, py - 9, 9, 0, Math.PI * 2);
+  ctx.arc(x+w/2, y-9, 10, 0, Math.PI*2);
   ctx.fill();
+  ctx.shadowBlur=0;
+
+  // Hair
+  ctx.fillStyle='#92400e';
+  ctx.beginPath();
+  ctx.arc(x+w/2, y-17, 10, Math.PI, 0);
+  ctx.fill();
+
   // Eye
-  ctx.fillStyle = '#0f0f1a';
+  ctx.fillStyle='#1e293b';
   ctx.beginPath();
-  ctx.arc(px + player.w / 2 + 3, py - 10, 2.5, 0, Math.PI * 2);
+  ctx.arc(x+w/2+4, y-9.5, 2.5, 0, Math.PI*2);
   ctx.fill();
-  // Laptop icon
-  ctx.fillStyle = '#a78bfa';
-  ctx.fillRect(px + 5, py + 8, 18, 12);
-  ctx.fillStyle = '#0f0f1a';
-  ctx.fillRect(px + 7, py + 10, 14, 8);
+  // Eye shine
+  ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.arc(x+w/2+5, y-10.5, 1, 0, Math.PI*2);
+  ctx.fill();
+
+  // Laptop
+  ctx.fillStyle='#1e1b4b';
+  roundRect(x+3,y+9,w-6,14,3);
+  ctx.fill();
+  ctx.fillStyle='#4f46e5';
+  roundRect(x+5,y+11,w-10,10,2);
+  ctx.fill();
+  // Screen glow
+  ctx.fillStyle='rgba(99,102,241,0.5)';
+  roundRect(x+6,y+12,w-12,8,1);
+  ctx.fill();
+  // Keyboard line
+  ctx.fillStyle='#312e81';
+  ctx.fillRect(x+5,y+23,w-10,2);
 }
 
-function drawObstacle(o) {
-  // Block
-  ctx.fillStyle = o.color;
-  ctx.beginPath();
-  ctx.roundRect(o.x, o.y, o.w, o.h, 4);
+function drawObstacle(o){
+  o.pulse = (o.pulse||0)+0.08;
+  const pulseBright = 0.85 + 0.15*Math.sin(o.pulse);
+
+  // Outer glow
+  ctx.shadowColor=o.glow;
+  ctx.shadowBlur=18;
+
+  // Gradient fill
+  const og = ctx.createLinearGradient(o.x,o.y,o.x,o.y+o.h);
+  og.addColorStop(0,o.color);
+  og.addColorStop(1,shadeColor(o.color,-40));
+  ctx.fillStyle=og;
+  roundRect(o.x,o.y,o.w,o.h,5);
   ctx.fill();
-  // Glow
-  ctx.shadowColor = o.color;
-  ctx.shadowBlur = 12;
-  ctx.fillStyle = o.color;
-  ctx.beginPath();
-  ctx.roundRect(o.x, o.y, o.w, o.h, 4);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  // Label (vertical)
+  ctx.shadowBlur=0;
+
+  // Top shine
+  ctx.fillStyle='rgba(255,255,255,0.2)';
+  ctx.fillRect(o.x+3,o.y+3,o.w-6,5);
+
+  // Vertical label
   ctx.save();
-  ctx.translate(o.x + o.w / 2, o.y + o.h / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 9px Segoe UI';
-  ctx.textAlign = 'center';
-  ctx.fillText(o.label, 0, 3);
+  ctx.translate(o.x+o.w/2, o.y+o.h/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillStyle=`rgba(255,255,255,${pulseBright})`;
+  ctx.font='bold 8px Space Grotesk, sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText(o.label,0,0);
   ctx.restore();
 }
 
-function drawHUD() {
-  // Progress bar
-  const pct = Math.min(projectIndex / PROJECTS.length, 1);
-  ctx.fillStyle = 'rgba(99,179,255,0.15)';
-  ctx.fillRect(12, 12, 200, 6);
-  ctx.fillStyle = '#63b3ff';
-  ctx.fillRect(12, 12, 200 * pct, 6);
-  ctx.fillStyle = '#a0aec0';
-  ctx.font = '10px Segoe UI';
-  ctx.fillText(`${projectIndex}/${PROJECTS.length} projects`, 12, 30);
+function shadeColor(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  const r=Math.min(255,Math.max(0,((n>>16)&0xff)+amt));
+  const g=Math.min(255,Math.max(0,((n>>8)&0xff)+amt));
+  const b=Math.min(255,Math.max(0,(n&0xff)+amt));
+  return `rgb(${r},${g},${b})`;
 }
 
-// ── LOOP ──────────────────────────────────────────────────────────
-function loop() {
-  if (state !== 'running') return;
-  frameId = requestAnimationFrame(loop);
+function drawParticles(){
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.life;
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
 
-  // Update BG scroll
-  bgX += speed * 0.4;
+function drawHUD(){
+  const pct = Math.min(projectIdx/PROJECTS.length,1);
+  // Progress track
+  ctx.fillStyle='rgba(255,255,255,0.05)';
+  roundRect(12,12,180,5,999);
+  ctx.fill();
+  // Progress fill (gradient)
+  if(pct>0){
+    const pg=ctx.createLinearGradient(12,0,192,0);
+    pg.addColorStop(0,'#3b82f6');
+    pg.addColorStop(0.5,'#8b5cf6');
+    pg.addColorStop(1,'#ec4899');
+    ctx.fillStyle=pg;
+    roundRect(12,12,180*pct,5,999);
+    ctx.fill();
+  }
+  // Label
+  ctx.fillStyle='rgba(148,163,184,0.7)';
+  ctx.font='10px Space Grotesk,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText(`${projectIdx} / ${PROJECTS.length} projects`,12,30);
+
+  // Project icons along bar
+  PROJECTS.forEach((p,i)=>{
+    const ix = 12 + (i/(PROJECTS.length-1))*180;
+    ctx.beginPath();
+    ctx.arc(ix,14.5, i<projectIdx?5:3, 0, Math.PI*2);
+    ctx.fillStyle = i<projectIdx ? p.color : 'rgba(255,255,255,0.15)';
+    ctx.fill();
+  });
+}
+
+// ── MAIN LOOP ─────────────────────────────────────────────
+function loop(){
+  if(state!=='running') return;
+  frameId=requestAnimationFrame(loop);
+
+  bgX   += speed*0.35;
   groundX += speed;
 
-  // Player physics
-  player.vy += 0.55;
-  player.y += player.vy;
-  if (player.y >= GROUND) {
-    player.y = GROUND;
-    player.vy = 0;
-    player.jumping = false;
-  }
+  // Physics
+  PL.vy += 0.6;
+  PL.y  += PL.vy;
+  if(PL.y>=GY){ PL.y=GY; PL.vy=0; PL.jumping=false; }
 
   // Spawn
   spawnTimer++;
-  if (spawnTimer >= nextSpawnAt) {
-    spawnObstacle();
-    spawnTimer = 0;
-    nextSpawnAt = 120 + Math.random() * 80;
+  if(spawnTimer>=nextSpawn){
+    spawnObs();
+    spawnTimer=0;
+    nextSpawn = 120 + Math.random()*90;
   }
 
-  // Move obstacles
-  for (let i = obstacles.length - 1; i >= 0; i--) {
-    const o = obstacles[i];
-    o.x -= speed;
-    // Passed?
-    if (!o.passed && o.x + o.w < player.x) {
-      o.passed = true;
+  // Update particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.15;
+    p.life-=0.035;
+    if(p.life<=0) particles.splice(i,1);
+  }
+
+  // Obstacles
+  for(let i=OBS.length-1;i>=0;i--){
+    const o=OBS[i];
+    o.x-=speed;
+
+    if(!o.passed && o.x+o.w < PL.x){
+      o.passed=true;
       score++;
-      document.getElementById('score-val').textContent = score;
-      // Show card when cleared the project obstacle
-      if (o.projectIdx === projectIndex && projectIndex < PROJECTS.length) {
-        projectIndex++;
-        speed = Math.min(speed + 0.3, 6.5);
-        if (projectIndex < PROJECTS.length) {
+      document.getElementById('score-val').textContent=score;
+      spawnClearParticles(o.x+o.w/2, o.y+o.h/2, o.color);
+      flashCombo(`+1 ⚡`);
+
+      if(o.projectIdx===projectIdx && projectIdx<PROJECTS.length){
+        projectIdx++;
+        speed=Math.min(speed+0.35,7.0);
+        if(projectIdx<PROJECTS.length){
           showProjectCard(PROJECTS[o.projectIdx]);
         } else {
-          // All done
           cancelAnimationFrame(frameId);
-          setTimeout(() => showScreen('end'), 600);
-          state = 'done';
+          state='done';
+          setTimeout(()=>{ showScreen('end'); spawnConfetti(); },700);
         }
         return;
       }
     }
-    // Off screen
-    if (o.x + o.w < -10) { obstacles.splice(i, 1); continue; }
+
+    if(o.x+o.w<-20){ OBS.splice(i,1); continue; }
 
     // Collision
-    if (
-      player.x + player.w - 6 > o.x + 3 &&
-      player.x + 6 < o.x + o.w - 3 &&
-      player.y + player.h > o.y + 4
-    ) {
-      // Hit! flash and reset run (no game-over, just bounce back)
-      player.vy = -7;
-      player.jumping = true;
-      obstacles.splice(i, 1);
+    if(
+      PL.x+PL.w-7 > o.x+4 &&
+      PL.x+7 < o.x+o.w-4 &&
+      PL.y+PL.h > o.y+5
+    ){
+      spawnHitParticles(PL.x+PL.w/2, PL.y+PL.h/2);
+      lives--;
+      hits++;
+      updateLives();
+      PL.vy=-8;
+      PL.jumping=true;
+      OBS.splice(i,1);
+      if(lives<=0){
+        // No full game-over — restore 1 life and keep going
+        lives=1;
+        updateLives();
+        flashCombo('😅 Keep going!');
+      }
       break;
     }
   }
 
-  // Toast timer
-  if (toastTimer > 0) {
-    toastTimer--;
-    if (toastTimer === 0) document.getElementById('project-toast').classList.remove('show');
-  }
-
-  // Draw
   drawBG();
-  obstacles.forEach(drawObstacle);
+  drawParticles();
+  OBS.forEach(drawObstacle);
   drawPlayer();
   drawHUD();
 }
 
-// ── CONTROLS ──────────────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.code === 'Space' || e.key === 'ArrowUp') { e.preventDefault(); jump(); }
-});
-canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
-canvas.addEventListener('mousedown', () => jump());
+// ── COMBO FLASH ───────────────────────────────────────────
+function flashCombo(txt){
+  const el=document.getElementById('combo-pop');
+  el.textContent=txt;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
 
-// ── INIT ──────────────────────────────────────────────────────────
+// ── CONFETTI ──────────────────────────────────────────────
+function spawnConfetti(){
+  const area=document.getElementById('confetti-area');
+  area.innerHTML='';
+  const colors=['#3b82f6','#8b5cf6','#ec4899','#f59e0b','#10b981','#f97316'];
+  for(let i=0;i<30;i++){
+    const d=document.createElement('div');
+    const c=colors[i%colors.length];
+    d.style.cssText=`
+      position:absolute;
+      width:${5+Math.random()*6}px;
+      height:${5+Math.random()*6}px;
+      background:${c};
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+      left:${Math.random()*100}%;
+      top:-10px;
+      animation:fall ${0.8+Math.random()*1.2}s ease-in ${Math.random()*0.5}s forwards;
+    `;
+    area.appendChild(d);
+  }
+  const style=document.createElement('style');
+  style.textContent=`@keyframes fall{to{transform:translateY(70px) rotate(360deg);opacity:0;}}`;
+  document.head.appendChild(style);
+}
+
+// ── CONTROLS ─────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.key==='ArrowUp'){ e.preventDefault(); jump(); }
+});
+C.addEventListener('touchstart',e=>{ e.preventDefault(); jump(); },{passive:false});
+C.addEventListener('mousedown',()=>jump());
+
+// ── INIT ─────────────────────────────────────────────────
 showScreen('splash');
 drawBG();
 </script>
